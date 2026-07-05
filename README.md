@@ -1,10 +1,12 @@
-# ChatScope
+<p align="center">
+	<img src="logo.png" alt="ChatScope" width="140">
+</p>
+
+<h1 align="center">ChatScope</h1>
 
 A client-side **Fabric mod for Minecraft 1.21.11** that mirrors your in-game chat, server info, and player list to a live web dashboard — with **fully configurable sections and filters**.
 
 While Minecraft is running, open **<http://localhost:25534>** in any browser and you get a real-time view of your chat that you can organise however you like.
-
-![sections and settings](https://github.com/packets-sh/chatscope) <!-- add a screenshot here -->
 
 ## Features
 

@@ -12,6 +12,7 @@
 		"sources": "https://github.com/packets-sh/chatscope"
 	},
 	"license": "MIT",
+	"icon": "assets/chatscope/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [
