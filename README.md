@@ -8,6 +8,8 @@ A client-side **Fabric mod for Minecraft 1.21.11** that mirrors your in-game cha
 
 While Minecraft is running, open **<http://localhost:25534>** in any browser and you get a real-time view of your chat that you can organise however you like.
 
+![The ChatScope dashboard](screenshots/dashboard.png)
+
 ## Features
 
 - **Live chat**, updated instantly over a WebSocket (no refreshing). Minecraft colours, bold/italic, and hover tooltips (item stats, entity info) are preserved.
@@ -45,6 +47,8 @@ While Minecraft is running, open **<http://localhost:25534>** in any browser and
 ## Configuring sections & filters
 
 Click the **⚙ settings** button in the top bar.
+
+![The in-browser settings panel](screenshots/settings.png)
 
 - **Sections** — each has a name, an on/off toggle, and one or more regex patterns (one per line). A message goes to the **first enabled section whose pattern matches**; the order matters, so use the ↑ / ↓ buttons to prioritise. Whatever matches nothing falls into the catch-all section (rename it at the bottom).
 - **Filters** — each is a single regex. A message matching **any enabled filter** is hidden completely.
