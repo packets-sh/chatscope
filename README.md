@@ -23,8 +23,22 @@ While Minecraft is running, open **<http://localhost:25534>** in any browser and
 
 ## Installing
 
+**Requirements**
+
+| | Version |
+| --- | --- |
+| Minecraft | 1.21.11 |
+| Fabric Loader | 0.16.14 or newer |
+| **Fabric API** | **0.140.0+1.21.11** (or newer for 1.21.11) |
+| Java | 21+ |
+| [Mod Menu](https://modrinth.com/mod/modmenu) | optional — only for the in-game settings button |
+
+[Cloth Config](https://modrinth.com/mod/cloth-config) is **bundled** in the jar, so you don't need to install it separately.
+
+**Steps**
+
 1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft **1.21.11**.
-2. Put the ChatScope jar **and** [Fabric API](https://modrinth.com/mod/fabric-api) in your `mods` folder.
+2. Put the ChatScope jar **and** [Fabric API](https://modrinth.com/mod/fabric-api) (`0.140.0+1.21.11` or newer) in your `mods` folder. Add [Mod Menu](https://modrinth.com/mod/modmenu) too if you want the in-game settings button.
 3. Launch Minecraft. The log prints `ChatScope running on http://localhost:25534`.
 4. Open <http://localhost:25534> in a browser.
 
