@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "chatscope",
+	"version": "${version}",
+	"name": "ChatScope",
+	"description": "A live web dashboard for Minecraft chat and the player list, with fully configurable sections and filters.",
+	"authors": [
+		"Robbin"
+	],
+	"contact": {
+		"homepage": "https://github.com/packets-sh/chatscope",
+		"sources": "https://github.com/packets-sh/chatscope"
+	},
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.chatscope.ChatScope"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.16.14",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

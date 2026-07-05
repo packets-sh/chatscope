@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ChatScope</title>
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%233fb950'/><rect x='3' y='4' width='10' height='2' fill='%23fff'/><rect x='3' y='7' width='7' height='2' fill='%23fff'/><rect x='3' y='10' width='9' height='2' fill='%23fff'/></svg>">
+	<link rel="stylesheet" href="style.css?v=${version}">
+</head>
+<body>
+	<header class="topbar">
+		<div class="topbar-left">
+			<span class="logo">🔭</span>
+			<h1>ChatScope</h1>
+			<span id="ws-status" class="pill pill-bad" title="Connection between this page and the mod">connecting…</span>
+		</div>
+		<div class="topbar-right">
+			<span id="viewers" class="viewers" title="People currently viewing this dashboard">👁 1</span>
+			<span id="uptime" class="uptime mono" title="Time since the game connected to the server"></span>
+			<button id="btn-settings" class="icon-btn" title="Configure sections & filters">⚙</button>
+			<button id="btn-access" class="icon-btn" title="Accessibility mode: show all text after the player's rank in white">♿</button>
+			<button id="btn-sound" class="icon-btn" title="Toggle sound when your name is mentioned">🔔</button>
+			<button id="btn-theme" class="icon-btn" title="Toggle dark/light mode">🌓</button>
+			<button id="btn-export" class="icon-btn" title="Export chat history as a text file">⬇</button>
+		</div>
+	</header>
+
+	<div id="actionbar" class="actionbar" hidden></div>
+
+	<main class="layout">
+		<section class="chat-pane">
+			<div class="chat-toolbar">
+				<input id="search" type="search" placeholder="Search chat… " autocomplete="off">
+				<span id="msg-count" class="mono muted"></span>
+			</div>
+			<!-- Sections are generated from the user's config. -->
+			<div id="sections" class="sections"></div>
+		</section>
+
+		<aside class="side-pane">
+			<div class="info-card">
+				<div class="info-row"><span class="info-label">Server</span><span id="info-server" class="info-value">—</span></div>
+				<div class="info-row"><span class="info-label">Status</span><span id="info-status" class="info-value">Disconnected</span></div>
+				<div class="info-row"><span class="info-label">Players Online</span><span id="info-count" class="info-value">—</span></div>
+				<div class="info-row"><span class="info-label">You</span><span id="info-you" class="info-value">—</span></div>
+			</div>
+			<div class="players-toolbar">
+				<div class="players-tabs">
+					<button id="ptab-online" class="ptab active" data-ptab="online">Online (<span id="online-count">0</span>)</button>
+					<button id="ptab-offline" class="ptab" data-ptab="offline">Offline</button>
+				</div>
+				<input id="player-search" type="search" placeholder="Search players…" autocomplete="off">
+			</div>
+			<div id="players" class="players"></div>
+		</aside>
+	</main>
+
+	<!-- Player profile: 3D skin + logged message history -->
+	<div id="player-modal" class="modal-backdrop" hidden>
+		<div class="modal">
+			<button id="modal-close" class="icon-btn modal-close" title="Close">✕</button>
+			<div class="modal-left">
+				<div id="skin-viewer" class="skin-viewer" title="Drag to rotate"></div>
+				<div id="modal-player-name" class="modal-player-name"></div>
+				<div id="modal-player-meta" class="modal-player-meta mono"></div>
+			</div>
+			<div class="modal-right">
+				<div class="modal-right-header">
+					<span>Message history</span>
+					<span id="modal-msg-count" class="mono muted"></span>
+				</div>
+				<input id="modal-search" class="modal-search" type="search" placeholder="Search this player's messages…" autocomplete="off">
+				<div id="modal-messages" class="modal-messages"></div>
+				<div id="modal-pager" class="modal-pager" hidden>
+					<button id="modal-prev" class="pager-btn">‹ Newer</button>
+					<span id="modal-pageinfo" class="mono muted"></span>
+					<button id="modal-next" class="pager-btn">Older ›</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Settings: configurable sections & filters -->
+	<div id="settings-modal" class="modal-backdrop" hidden>
+		<div class="modal settings">
+			<button id="settings-close" class="icon-btn modal-close" title="Close">✕</button>
+			<h2 class="settings-title">Settings</h2>
+			<p class="settings-intro">
+				Route chat into sections and hide noise with your own patterns.
+				Each pattern is a JavaScript regular expression matched against the
+				plain text of a message. Changes apply instantly and are saved in
+				this browser.
+			</p>
+
+			<div class="settings-group">
+				<div class="settings-group-head">
+					<h3>Sections</h3>
+					<button id="add-section" class="mini-btn">+ Add section</button>
+				</div>
+				<p class="settings-hint">A message goes to the first enabled section whose pattern matches. Anything unmatched falls into the catch-all below.</p>
+				<div id="sections-editor" class="editor-list"></div>
+				<label class="others-name">Catch-all section name
+					<input id="others-name" type="text">
+				</label>
+			</div>
+
+			<div class="settings-group">
+				<div class="settings-group-head">
+					<h3>Filters (hide messages)</h3>
+					<button id="add-filter" class="mini-btn">+ Add filter</button>
+				</div>
+				<p class="settings-hint">Messages matching any enabled filter are hidden completely.</p>
+				<div id="filters-editor" class="editor-list"></div>
+			</div>
+
+			<div class="settings-actions">
+				<button id="settings-reset" class="mini-btn danger">Reset to defaults</button>
+			</div>
+		</div>
+	</div>
+
+	<div id="hover-tooltip" class="mc-tooltip" hidden></div>
+	<div id="toast" class="toast" hidden></div>
+
+	<script src="app.js?v=${version}"></script>
+</body>
+</html>
