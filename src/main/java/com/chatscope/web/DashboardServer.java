@@ -4,8 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import com.chatscope.ChatScope;
 import com.chatscope.db.ChatDatabase;
@@ -35,15 +37,105 @@ public class DashboardServer extends NanoWSD {
 			"ico", "image/x-icon"
 	);
 
+	private static final String AUTH_COOKIE = "chatscope_auth";
+
 	private final ClientRegistry registry;
 	private final ChatDatabase database;
+	// Live password from the mod config; empty/blank means the dashboard is open.
+	private final Supplier<String> password;
 
-	public DashboardServer(int port, ClientRegistry registry, ChatDatabase database) {
-		// Bound to localhost. To reach the dashboard from another device, put a
-		// tunnel/reverse proxy (e.g. cloudflared) in front of this port.
-		super("127.0.0.1", port);
+	public DashboardServer(int port, ClientRegistry registry, ChatDatabase database, Supplier<String> password) {
+		// Bound to all interfaces (0.0.0.0) so the dashboard is reachable from
+		// other devices on the network and can be port-forwarded directly. Set a
+		// password in the mod settings if you expose it beyond your own machine.
+		super("0.0.0.0", port);
 		this.registry = registry;
 		this.database = database;
+		this.password = password;
+	}
+
+	/**
+	 * Optional password gate in front of everything (pages, API, WebSocket).
+	 * Skipped entirely when no password is configured.
+	 */
+	@Override
+	public Response serve(IHTTPSession session) {
+		String pw = password.get();
+		if (pw != null && !pw.isBlank() && !isAuthenticated(session, pw)) {
+			return loginGate(session, pw);
+		}
+		return super.serve(session);
+	}
+
+	// Opaque cookie value derived from the password, so changing it logs everyone out.
+	private static String tokenFor(String pw) {
+		return "cs" + Integer.toHexString(("chatscope:" + pw).hashCode());
+	}
+
+	private boolean isAuthenticated(IHTTPSession session, String pw) {
+		return tokenFor(pw).equals(session.getCookies().read(AUTH_COOKIE));
+	}
+
+	private Response loginGate(IHTTPSession session, String pw) {
+		boolean failed = false;
+		if (session.getMethod() == Method.POST) {
+			try {
+				session.parseBody(new HashMap<>());
+			} catch (Exception ignored) {
+				// Empty/malformed body just falls through to a failed login.
+			}
+			String submitted = session.getParameters().getOrDefault("password", List.of("")).get(0);
+			if (pw.equals(submitted)) {
+				Response redirect = NanoHTTPD.newFixedLengthResponse(
+						Response.Status.REDIRECT_SEE_OTHER, "text/plain", "");
+				redirect.addHeader("Location", "/");
+				redirect.addHeader("Set-Cookie", AUTH_COOKIE + "=" + tokenFor(pw)
+						+ "; Path=/; Max-Age=604800; HttpOnly; SameSite=Lax");
+				return redirect;
+			}
+			failed = true;
+		}
+		Response page = NanoHTTPD.newFixedLengthResponse(
+				Response.Status.OK, "text/html; charset=utf-8", loginHtml(failed));
+		page.addHeader("Cache-Control", "no-store");
+		return page;
+	}
+
+	private static String loginHtml(boolean failed) {
+		String error = failed ? "<p class=\"err\">Incorrect password.</p>" : "";
+		// Plain concatenation, not String.formatted(): the CSS "width:100%"
+		// would otherwise be read as a format specifier.
+		return """
+				<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>ChatScope — Login</title>
+				<style>
+				  html,body{height:100%;margin:0}
+				  body{display:flex;align-items:center;justify-content:center;
+				    background:#0d1117;color:#e6edf3;font-family:"Segoe UI",system-ui,sans-serif}
+				  form{background:#161b22;border:1px solid #2d333b;border-radius:14px;
+				    padding:28px 26px;width:min(320px,90vw);text-align:center;
+				    box-shadow:0 12px 48px rgba(0,0,0,.4)}
+				  h1{font-size:18px;margin:0 0 4px}
+				  p.sub{color:#8b949e;font-size:13px;margin:0 0 18px}
+				  input{width:100%;box-sizing:border-box;background:#0b0f14;
+				    border:1px solid #2d333b;border-radius:8px;color:#e6edf3;
+				    padding:10px 12px;font-size:14px;outline:none}
+				  input:focus{border-color:#58a6ff}
+				  button{width:100%;margin-top:12px;background:#238636;color:#fff;
+				    border:none;border-radius:8px;padding:10px;font-size:14px;
+				    font-weight:600;cursor:pointer}
+				  button:hover{background:#2ea043}
+				  p.err{color:#f85149;font-size:13px;margin:12px 0 0}
+				</style></head><body>
+				<form method="POST" action="/login">
+				  <h1>🔭 ChatScope</h1>
+				  <p class="sub">Enter the password to continue.</p>
+				  <input type="password" name="password" placeholder="Password"
+				    autofocus autocomplete="current-password">
+				  <button type="submit">Enter</button>
+				  """ + error + """
+				</form></body></html>""";
 	}
 
 	@Override

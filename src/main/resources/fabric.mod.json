@@ -16,12 +16,19 @@
 	"entrypoints": {
 		"client": [
 			"com.chatscope.ChatScope"
+		],
+		"modmenu": [
+			"com.chatscope.config.ChatScopeModMenu"
 		]
 	},
 	"depends": {
 		"fabricloader": ">=0.16.14",
 		"minecraft": "~1.21.11",
 		"java": ">=21",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"cloth-config": "*"
+	},
+	"suggests": {
+		"modmenu": "*"
 	}
 }

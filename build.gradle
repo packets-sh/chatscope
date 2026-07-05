@@ -11,8 +11,9 @@ base {
 
 repositories {
 	// Loom adds the Minecraft/Fabric maven repositories automatically.
-	// Maven Central is needed for NanoHTTPD (the embedded web server).
-	mavenCentral()
+	mavenCentral()                                  // NanoHTTPD, SQLite
+	maven { url "https://maven.shedaniel.me/" }     // Cloth Config
+	maven { url "https://maven.terraformersmc.com/releases/" } // Mod Menu
 }
 
 dependencies {
@@ -20,6 +21,14 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// In-game settings screen (Cloth Config AutoConfig, bundled) + the Mod Menu
+	// hook that surfaces it in the mod list (Mod Menu itself is optional).
+	modImplementation("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
+		exclude group: "net.fabricmc.fabric-api"
+	}
+	include "me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}"
+	modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 
 	// Embedded HTTP + WebSocket server (bundled into the mod jar via jar-in-jar).
 	implementation "org.nanohttpd:nanohttpd:2.3.1"

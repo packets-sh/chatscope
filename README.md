@@ -15,6 +15,7 @@ While Minecraft is running, open **<http://localhost:25534>** in any browser and
 - **Player list** like the in-game tab list: skins/heads, ping bars, game mode, and UUID on hover. Search it, and switch between **Online** and **Offline** (everyone seen in the chat log).
 - **Player profiles** — click a player for an interactive 3D view of their skin plus their full logged message history, with search and pagination.
 - **Per-server chat log** stored in a local SQLite database, split into a table per server so history never mixes between servers.
+- **Network access with an optional password** — the dashboard listens on all interfaces, so it's easy to port-forward. Set a password in the mod settings to protect it (empty = open).
 - **Quality of life**: dark/light theme, accessibility mode (whitens everything after a player's rank), mention sound, live viewer count, connection uptime, chat search, and export to a text file.
 - No external frontend frameworks — just HTML, CSS, and JavaScript.
 
@@ -43,9 +44,18 @@ Patterns are standard JavaScript regular expressions, matched against the plain 
 
 Your configuration lives in the browser (localStorage), so each viewer can customise their own layout.
 
-## Remote access
+## Network access & password
 
-The server binds to `localhost` only. To view the dashboard from another device, run a tunnel or reverse proxy (for example [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)) in front of port `25534`. There is no authentication built in, so only expose it to people you trust, or add auth at the proxy layer.
+The dashboard listens on **all network interfaces** (`0.0.0.0`), so it's reachable at `http://<your-computer-ip>:25534` from other devices on your network and can be **port-forwarded** directly — no tunnel required.
+
+Because it can be exposed, ChatScope has an optional **password**:
+
+- Open the mod's settings in-game via [Mod Menu](https://modrinth.com/mod/modmenu) (**Mods → ChatScope → Settings**), or edit `config/chatscope.json` by hand.
+- Set a password to require it before the dashboard loads. Leave it **empty for open access** (the default). Changes take effect immediately — no restart needed.
+
+[Cloth Config](https://modrinth.com/mod/cloth-config) is bundled, so no extra install is needed; Mod Menu is only required for the in-game settings button (the password still works via the config file without it).
+
+> Only expose the dashboard to people you trust — anyone who can reach it (and knows the password, if set) can read the chat log and player history.
 
 ## Building
 
@@ -61,13 +71,14 @@ The mod jar is written to `build/libs/chatscope-<version>.jar` (use the one *wit
 
 - Player heads and skins load from [Crafatar](https://crafatar.com) by UUID, falling back to [mc-heads.net](https://mc-heads.net) by name for offline-mode servers.
 - The chat log database lives at `<game dir>/chatscope/chat.db` and can be opened with any SQLite browser.
-- Runs entirely client-side; the embedded web server is bound to localhost.
+- Runs entirely client-side; the embedded web server listens on all interfaces (`0.0.0.0`).
 
 ## Project layout
 
 ```
 src/main/java/com/chatscope/
 ├── ChatScope.java           entry point, wiring, web server lifecycle
+├── config/                  mod settings (password) + Mod Menu screen
 ├── chat/                    chat event listener + bounded history buffer
 ├── players/                 tab list polling
 ├── server/                  connection tracking + shared dashboard state

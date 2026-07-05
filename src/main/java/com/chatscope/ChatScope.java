@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.chatscope.chat.ChatHistory;
 import com.chatscope.chat.ChatListener;
+import com.chatscope.config.ChatScopeConfig;
 import com.chatscope.db.ChatDatabase;
 import com.chatscope.players.PlayerListTracker;
 import com.chatscope.server.ConnectionTracker;
@@ -15,6 +16,8 @@ import com.chatscope.server.DashboardState;
 import com.chatscope.web.DashboardServer;
 import com.chatscope.websocket.ClientRegistry;
 
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -38,6 +41,9 @@ public class ChatScope implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+		// Mod settings (editable via Mod Menu, persisted to config/chatscope.json).
+		AutoConfig.register(ChatScopeConfig.class, GsonConfigSerializer::new);
+
 		DashboardState state = new DashboardState(new ChatHistory(CHAT_HISTORY_SIZE));
 		registry = new ClientRegistry(state);
 
@@ -54,7 +60,10 @@ public class ChatScope implements ClientModInitializer {
 		new PlayerListTracker(state, registry).register();
 		new ConnectionTracker(state, registry, database).register();
 
-		server = new DashboardServer(PORT, registry, database);
+		// Password is read live from the config each request, so changing it in
+		// the settings screen takes effect without a restart.
+		server = new DashboardServer(PORT, registry, database,
+				() -> AutoConfig.getConfigHolder(ChatScopeConfig.class).getConfig().password);
 		try {
 			// timeout 0 = sockets never time out on their own; WebSockets stay
 			// open and dead ones are reaped by the registry's ping schedule.

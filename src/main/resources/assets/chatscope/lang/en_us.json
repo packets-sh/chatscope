@@ -1,0 +1,5 @@
+{
+	"text.autoconfig.chatscope.title": "ChatScope Settings",
+	"text.autoconfig.chatscope.option.password": "Dashboard password",
+	"text.autoconfig.chatscope.option.password.@Tooltip": "Password required to open the dashboard in a browser. Leave empty for no password (open access)."
+}
