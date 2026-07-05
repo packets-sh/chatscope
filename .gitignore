@@ -13,6 +13,3 @@ bin/
 
 # Fabric/Loom
 run/
-
-# Editor / local settings
-.claude/
