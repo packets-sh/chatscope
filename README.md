@@ -18,6 +18,7 @@ While Minecraft is running, open **<http://localhost:25534>** in any browser and
 - **Live settings panel** — add, rename, reorder, enable/disable sections and filters right in the browser. Changes apply instantly and are saved locally. Invalid regexes are flagged and simply ignored.
 - **Player list** like the in-game tab list: skins/heads, ping bars, game mode, and UUID on hover. Search it, and switch between **Online** and **Offline** (everyone seen in the chat log).
 - **Player profiles** — click a player for an interactive 3D view of their skin plus their full logged message history, with search and pagination.
+- **Export a player's history** — save their messages to a text file, optionally including N messages before and after each one **from everyone**, so you get the surrounding conversation instead of isolated lines.
 - **Per-server chat log** stored in a local SQLite database, split into a table per server so history never mixes between servers.
 - **Network access with an optional password** — the dashboard listens on all interfaces, so it's easy to port-forward. Set a password in the mod settings to protect it (empty = open).
 - **Quality of life**: dark/light theme, accessibility mode (whitens everything after a player's rank), mention sound, live viewer count, connection uptime, chat search, and export to a text file.
