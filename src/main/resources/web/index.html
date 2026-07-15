@@ -70,6 +70,12 @@
 					<span id="modal-msg-count" class="mono muted"></span>
 				</div>
 				<input id="modal-search" class="modal-search" type="search" placeholder="Search this player's messages…" autocomplete="off">
+				<div class="modal-tools">
+					<label class="ctx-label" title="Also include this many messages before and after each of their messages, from everyone">
+						context ±<input id="modal-context" type="number" min="0" max="200" value="0">
+					</label>
+					<button id="modal-export" class="mini-btn" title="Export this player's messages to a text file">⬇ Export</button>
+				</div>
 				<div id="modal-messages" class="modal-messages"></div>
 				<div id="modal-pager" class="modal-pager" hidden>
 					<button id="modal-prev" class="pager-btn">‹ Newer</button>

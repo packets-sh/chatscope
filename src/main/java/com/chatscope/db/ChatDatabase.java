@@ -8,7 +8,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -200,6 +204,82 @@ public class ChatDatabase implements AutoCloseable {
 		}
 		result.add("messages", messages);
 		return result;
+	}
+
+	/**
+	 * Rows for an export of one player's messages, in chronological order.
+	 *
+	 * When {@code context} is above zero, each of the player's messages also
+	 * pulls in that many messages before and after it <em>from everyone</em>,
+	 * so the surrounding conversation is included. Overlapping windows are
+	 * merged, so nothing is duplicated. Each row carries an {@code own} flag
+	 * marking whether it is the player's own message.
+	 *
+	 * Rows are ordered by id, which equals insertion order (a single writer
+	 * thread), so "N messages before/after" is simply an id window.
+	 */
+	public JsonArray exportWithContext(String name, String query, int context, int limit) throws SQLException {
+		JsonArray out = new JsonArray();
+		String table = currentTable;
+		if (table == null) {
+			return out;
+		}
+
+		String escaped = escapeLike(name);
+		boolean hasQuery = query != null && !query.isBlank();
+		String where = PLAYER_WHERE + (hasQuery ? " AND plain LIKE '%' || ? || '%' ESCAPE '\\'" : "");
+
+		synchronized (connection) {
+			// 1. The player's own message ids (ascending).
+			List<Long> ids = new ArrayList<>();
+			try (PreparedStatement ps = connection.prepareStatement(
+					"SELECT id FROM " + table + " WHERE " + where + " ORDER BY id ASC")) {
+				int i = bindPlayer(ps, name, escaped);
+				if (hasQuery) ps.setString(i, escapeLike(query));
+				try (ResultSet rs = ps.executeQuery()) {
+					while (rs.next()) ids.add(rs.getLong(1));
+				}
+			}
+			if (ids.isEmpty()) {
+				return out;
+			}
+			Set<Long> own = new HashSet<>(ids);
+
+			// 2. Merge the [id-context, id+context] windows into ranges.
+			List<long[]> ranges = new ArrayList<>();
+			for (long id : ids) {
+				long start = id - context;
+				long end = id + context;
+				long[] last = ranges.isEmpty() ? null : ranges.get(ranges.size() - 1);
+				if (last != null && start <= last[1] + 1) {
+					last[1] = Math.max(last[1], end);
+				} else {
+					ranges.add(new long[] { start, end });
+				}
+			}
+
+			// 3. Read each range back in order.
+			try (PreparedStatement ps = connection.prepareStatement(
+					"SELECT id, ts, sender, plain FROM " + table + " WHERE id BETWEEN ? AND ? ORDER BY id ASC")) {
+				for (long[] range : ranges) {
+					if (out.size() >= limit) break;
+					ps.setLong(1, range[0]);
+					ps.setLong(2, range[1]);
+					try (ResultSet rs = ps.executeQuery()) {
+						while (rs.next() && out.size() < limit) {
+							JsonObject json = new JsonObject();
+							json.addProperty("ts", rs.getLong("ts"));
+							String sender = rs.getString("sender");
+							if (sender != null) json.addProperty("sender", sender);
+							json.addProperty("plain", rs.getString("plain"));
+							json.addProperty("own", own.contains(rs.getLong("id")));
+							out.add(json);
+						}
+					}
+				}
+			}
+		}
+		return out;
 	}
 
 	/**

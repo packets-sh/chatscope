@@ -122,6 +122,8 @@ const el = {
 	modalPrev: document.getElementById("modal-prev"),
 	modalNext: document.getElementById("modal-next"),
 	modalPageInfo: document.getElementById("modal-pageinfo"),
+	modalContext: document.getElementById("modal-context"),
+	modalExport: document.getElementById("modal-export"),
 	// settings modal
 	settingsModal: document.getElementById("settings-modal"),
 	settingsClose: document.getElementById("settings-close"),
@@ -839,6 +841,58 @@ el.modalSearch.addEventListener("input", () => {
 });
 el.modalPrev.addEventListener("click", () => { if (modalPage > 0) { modalPage--; loadHistoryPage(); } });
 el.modalNext.addEventListener("click", () => { modalPage++; loadHistoryPage(); });
+
+/* ---------- Export this player's history ---------- */
+
+el.modalExport.addEventListener("click", exportPlayerHistory);
+
+async function exportPlayerHistory() {
+	if (!modalPlayer) return;
+	const context = Math.max(0, Math.min(200, parseInt(el.modalContext.value, 10) || 0));
+	const url = `/api/player/export?name=${encodeURIComponent(modalPlayer.name)}&context=${context}`
+		+ (modalQuery ? `&q=${encodeURIComponent(modalQuery)}` : "");
+
+	el.modalExport.disabled = true;
+	showToast("Preparing export…");
+	try {
+		const response = await fetch(url);
+		const data = await response.json();
+		if (data.error) throw new Error(data.error);
+		const messages = data.messages || [];
+		if (messages.length === 0) { showToast("Nothing to export"); return; }
+
+		const header = [
+			`Chat export — ${data.name}`,
+			serverStatus && serverStatus.connected
+				? `Server: ${serverStatus.address || serverStatus.name}` : null,
+			context > 0
+				? `Context: ${context} message(s) before and after each of their messages, from everyone`
+				: "Context: none (only this player's messages)",
+			modalQuery ? `Search filter: "${modalQuery}"` : null,
+			`Generated: ${new Date().toLocaleString()}`,
+			`Lines: ${messages.length}`,
+			'">>" marks this player\'s own messages.',
+			"-".repeat(70),
+			""
+		].filter(line => line !== null);
+
+		const lines = messages.map(m =>
+			`${m.own ? ">>" : "  "} [${formatDate(m.ts)} ${formatTime(m.ts)}] ${m.plain}`);
+
+		const blob = new Blob([header.concat(lines).join("\n")], { type: "text/plain" });
+		const link = document.createElement("a");
+		link.href = URL.createObjectURL(blob);
+		link.download = `${data.name}-chat${context ? `-ctx${context}` : ""}`
+			+ `-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
+		link.click();
+		URL.revokeObjectURL(link.href);
+		showToast(`Exported ${messages.length} lines`);
+	} catch (err) {
+		showToast(`Export failed (${err.message})`);
+	} finally {
+		el.modalExport.disabled = false;
+	}
+}
 
 function closePlayerModal() { el.playerModal.hidden = true; stopSkinViewer(); }
 el.modalClose.addEventListener("click", closePlayerModal);

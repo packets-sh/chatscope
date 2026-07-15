@@ -152,6 +152,9 @@ public class DashboardServer extends NanoWSD {
 		if (uri.equals("/api/players")) {
 			return serveKnownPlayers();
 		}
+		if (uri.equals("/api/player/export")) {
+			return servePlayerExport(session);
+		}
 		if (uri.equals("/") || uri.isEmpty()) {
 			uri = "/index.html";
 		}
@@ -224,6 +227,40 @@ public class DashboardServer extends NanoWSD {
 			return Math.max(min, Math.min(max, Integer.parseInt(values.get(0))));
 		} catch (NumberFormatException e) {
 			return def;
+		}
+	}
+
+	/**
+	 * {@code GET /api/player/export?name=<n>[&context=<n>][&q=<text>]} — the
+	 * player's messages for export, optionally padded with that many messages
+	 * before/after each one from everyone.
+	 */
+	private Response servePlayerExport(IHTTPSession session) {
+		if (database == null) {
+			return jsonError(Response.Status.SERVICE_UNAVAILABLE, "chat database unavailable");
+		}
+		List<String> names = session.getParameters().get("name");
+		if (names == null || names.isEmpty() || names.get(0).isBlank()) {
+			return jsonError(Response.Status.BAD_REQUEST, "missing 'name' parameter");
+		}
+		String name = names.get(0);
+		int context = clampInt(session, "context", 0, 0, 200);
+		int limit = clampInt(session, "limit", 20000, 1, 100000);
+		List<String> qs = session.getParameters().get("q");
+		String query = qs != null && !qs.isEmpty() ? qs.get(0) : null;
+
+		try {
+			JsonObject result = new JsonObject();
+			result.addProperty("name", name);
+			result.addProperty("context", context);
+			result.add("messages", database.exportWithContext(name, query, context, limit));
+			Response response = NanoHTTPD.newFixedLengthResponse(
+					Response.Status.OK, "application/json; charset=utf-8", JsonUtil.GSON.toJson(result));
+			response.addHeader("Cache-Control", "no-store");
+			return response;
+		} catch (SQLException e) {
+			ChatScope.LOGGER.warn("Player export query failed", e);
+			return jsonError(Response.Status.INTERNAL_ERROR, "query failed");
 		}
 	}
 

@@ -627,6 +627,33 @@ body.accessibility #player-modal .modal-player-meta * { color: var(--acc-text) !
 }
 .modal-search:focus { border-color: var(--link); }
 
+.modal-tools {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 8px;
+	flex-shrink: 0;
+}
+.ctx-label {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 11px;
+	color: var(--text-muted);
+	cursor: help;
+}
+#modal-context {
+	width: 58px;
+	background: var(--bg-input);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	color: var(--text);
+	font-size: 12px;
+	padding: 4px 6px;
+	outline: none;
+}
+#modal-context:focus { border-color: var(--link); }
+
 .modal-messages {
 	flex: 1;
 	overflow-y: auto;
